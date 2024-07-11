@@ -8,7 +8,7 @@ Since it uses teams to set glowing color, you can also set nickname visibility a
 
 Example usage (this is your main class implementing listener):
 ```java
-RedefinedGlowingEntitiesAPI geAPI;
+public RedefinedGlowingEntitiesAPI geAPI;
 
 @Override
 public void onEnable() {
@@ -25,9 +25,9 @@ public void onEntityInteractEvent(PlayerInteractAtEntityEvent e) {
 	Entity rightClickedEntity = e.getRightClicked();
 	Player player = e.getPlayer();
 
-	ge.setGlowing(player, rightClickedEntity, NamedTextColor.GREEN);
-	ge.setNametagVisiblity(player, rightClickedEntity, GlowTeamNametagVisibility.NEVER);
-	ge.setCollisionRule(player, rightClickedEntity, GlowTeamCollisionRule.NEVER);
+	geAPI.setGlowing(player, rightClickedEntity, NamedTextColor.GREEN);
+	geAPI.setNametagVisiblity(player, rightClickedEntity, GlowTeamNametagVisibility.NEVER);
+	geAPI.setCollisionRule(player, rightClickedEntity, GlowTeamCollisionRule.NEVER);
 }
 ```
 
