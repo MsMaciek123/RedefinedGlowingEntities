@@ -10,6 +10,7 @@ import io.github.retrooper.packetevents.factory.spigot.SpigotPacketEventsBuilder
 import lombok.Getter;
 import me.msmaciek.redefinedglowingentities.Utils;
 import me.msmaciek.redefinedglowingentities.listeners.EntityMetadataPacketListener;
+import me.msmaciek.redefinedglowingentities.listeners.EventListener;
 import me.msmaciek.redefinedglowingentities.structs.GlowTeamCollisionRule;
 import me.msmaciek.redefinedglowingentities.structs.GlowTeamNametagVisibility;
 import me.msmaciek.redefinedglowingentities.structs.GlowTeamSettings;
@@ -23,6 +24,8 @@ import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.*;
+
+import static org.bukkit.Bukkit.getServer;
 
 @Getter
 public class RedefinedGlowingEntitiesAPI {
@@ -47,6 +50,8 @@ public class RedefinedGlowingEntitiesAPI {
 			new EntityMetadataPacketListener(this),
 			PacketListenerPriority.LOW
 		);
+
+		getServer().getPluginManager().registerEvents(new EventListener(this), plugin);
 		PacketEvents.getAPI().load();
 	}
 
@@ -74,6 +79,14 @@ public class RedefinedGlowingEntitiesAPI {
 		String entityTeamId = target.getUniqueId().toString();
 		if(target instanceof Player)
 			entityTeamId = target.getName();
+
+		var teamRemovePacket = new WrapperPlayServerTeams(
+			Utils.getTeamName(receiver, target.getEntityId()),
+			WrapperPlayServerTeams.TeamMode.REMOVE,
+			Optional.empty()
+		);
+
+		PacketEvents.getAPI().getPlayerManager().sendPacket(receiver, teamRemovePacket);
 
 		var teamCreatePacket = new WrapperPlayServerTeams(
 			Utils.getTeamName(receiver, target.getEntityId()),
