@@ -261,4 +261,11 @@ public class RedefinedGlowingEntitiesAPI {
 		return entitiesData.get(Utils.getTeamName(receiverUUID, targetId));
 	}
 
+	public boolean isEntityDataSet(UUID receiverUUID, int targetId) {
+		return entitiesData.containsKey(Utils.getTeamName(receiverUUID, targetId));
+	}
+
+	public boolean isPlayerDataSet(Player receiver, Player target) {
+		return isEntityDataSet(receiver.getUniqueId(), target.getEntityId());
+	}
 }
