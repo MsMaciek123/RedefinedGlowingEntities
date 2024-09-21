@@ -36,14 +36,17 @@ public class RedefinedGlowingEntitiesAPI {
 	// team name -> team settings
 	private final HashMap<String, GlowTeamSettings> entitiesData = new HashMap<>();
 
+	private final JavaPlugin plugin;
+
 	public RedefinedGlowingEntitiesAPI(JavaPlugin plugin) {
+		this.plugin = plugin;
+
 		if(!PacketEvents.getAPI().isLoaded()) {
 			PacketEvents.setAPI(SpigotPacketEventsBuilder.build(plugin));
 
 			PacketEvents.getAPI().getSettings()
 				.reEncodeByDefault(true)
-				.checkForUpdates(false)
-				.bStats(false);
+				.checkForUpdates(false);
 		}
 
 		PacketEvents.getAPI().getEventManager().registerListener(

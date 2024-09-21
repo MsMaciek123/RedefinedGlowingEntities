@@ -37,6 +37,9 @@ public class EntityMetadataPacketListener implements PacketListener {
 		if(!geAPI.getEntitiesData().containsKey(teamName))
 			return;
 
+		if(!geAPI.getEntitiesData().get(teamName).glowingEnabled)
+			return;
+
 		boolean glowingByteSet = false;
 		for (var metadata : packet.getEntityMetadata()) {
 			if (metadata.getIndex() != GLOWING_METADATA_INDEX)
