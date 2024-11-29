@@ -119,6 +119,9 @@ public class RedefinedGlowingEntitiesAPI {
 	}
 
 	public void unsetGlowing(Player receiver, Entity target) {
+		if(getEntityData(receiver.getUniqueId(), target.getEntityId()) == null)
+			return;
+
 		getEntityData(receiver.getUniqueId(), target.getEntityId()).color = NamedTextColor.WHITE;
 		getEntityData(receiver.getUniqueId(), target.getEntityId()).glowingEnabled = false;
 		resendTeam(receiver, target);
@@ -192,7 +195,12 @@ public class RedefinedGlowingEntitiesAPI {
 			UUID receiverUUID = ar.get(0);
 
 			makeDefault(receiverUUID, entity.getEntityId());
-			removeIfDefault(Objects.requireNonNull(Bukkit.getPlayer(receiverUUID)), entity);
+			Player receiver = Bukkit.getPlayer(receiverUUID);
+
+			if(receiver != null)
+				removeIfDefault(receiver, entity);
+			else
+				removeIfDefault(receiverUUID, entity.getEntityId());
 		}
 	}
 
