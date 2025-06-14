@@ -34,11 +34,9 @@ public class EntityMetadataPacketListener implements PacketListener {
 
 		String teamName = Utils.getTeamName(receiverUUID, entityId);
 
-		if(!geAPI.getEntitiesData().containsKey(teamName))
-			return;
-
-		if(!geAPI.getEntitiesData().get(teamName).glowingEnabled)
-			return;
+		var entitiesData = geAPI.getEntitiesData().get(teamName);
+		if(entitiesData == null) return;
+		if(!entitiesData.glowingEnabled) return;
 
 		boolean glowingByteSet = false;
 		for (var metadata : packet.getEntityMetadata()) {
