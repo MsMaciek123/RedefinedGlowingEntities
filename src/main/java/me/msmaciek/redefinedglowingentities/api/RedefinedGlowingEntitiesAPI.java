@@ -97,9 +97,9 @@ public class RedefinedGlowingEntitiesAPI {
 			Utils.getTeamName(receiver, target.getEntityId()),
 			WrapperPlayServerTeams.TeamMode.CREATE,
 			new WrapperPlayServerTeams.ScoreBoardTeamInfo(
-				Component.empty(),
-				Component.empty(),
-				Component.empty(),
+				teamSettings.getDisplayName(),
+				teamSettings.getPrefix(),
+				teamSettings.getSuffix(),
 				WrapperPlayServerTeams.NameTagVisibility.fromID(teamSettings.getNametagVisibility().name()),
 				WrapperPlayServerTeams.CollisionRule.fromID(teamSettings.getCollisionRule().name()),
 				teamSettings.getColor(),
@@ -181,6 +181,45 @@ public class RedefinedGlowingEntitiesAPI {
 		int targetEntityId = target.getEntityId();
 		GlowTeamSettings data = Optional.ofNullable(getEntityData(receiverUUID, targetEntityId)).orElse(GlowTeamSettings.builder().build());
 		GlowTeamSettings updated = data.toBuilder().color(color).build();
+		entitiesData.put(Utils.getTeamName(receiverUUID, targetEntityId), updated);
+		resendTeam(receiver, target);
+
+		if(!removeIfDefault(receiver, target))
+			resendEntityMetadata(receiver, target);
+	}
+
+	public void setDisplayName(Player receiver, Entity target, Component displayName) {
+		setTeamSettingsIfAbsent(receiver, target);
+		UUID receiverUUID = receiver.getUniqueId();
+		int targetEntityId = target.getEntityId();
+		GlowTeamSettings data = Optional.ofNullable(getEntityData(receiverUUID, targetEntityId)).orElse(GlowTeamSettings.builder().build());
+		GlowTeamSettings updated = data.toBuilder().displayName(displayName).build();
+		entitiesData.put(Utils.getTeamName(receiverUUID, targetEntityId), updated);
+		resendTeam(receiver, target);
+
+		if(!removeIfDefault(receiver, target))
+			resendEntityMetadata(receiver, target);
+	}
+
+	public void setPrefix(Player receiver, Entity target, Component prefix) {
+		setTeamSettingsIfAbsent(receiver, target);
+		UUID receiverUUID = receiver.getUniqueId();
+		int targetEntityId = target.getEntityId();
+		GlowTeamSettings data = Optional.ofNullable(getEntityData(receiverUUID, targetEntityId)).orElse(GlowTeamSettings.builder().build());
+		GlowTeamSettings updated = data.toBuilder().prefix(prefix).build();
+		entitiesData.put(Utils.getTeamName(receiverUUID, targetEntityId), updated);
+		resendTeam(receiver, target);
+
+		if(!removeIfDefault(receiver, target))
+			resendEntityMetadata(receiver, target);
+	}
+
+	public void setSuffix(Player receiver, Entity target, Component suffix) {
+		setTeamSettingsIfAbsent(receiver, target);
+		UUID receiverUUID = receiver.getUniqueId();
+		int targetEntityId = target.getEntityId();
+		GlowTeamSettings data = Optional.ofNullable(getEntityData(receiverUUID, targetEntityId)).orElse(GlowTeamSettings.builder().build());
+		GlowTeamSettings updated = data.toBuilder().suffix(suffix).build();
 		entitiesData.put(Utils.getTeamName(receiverUUID, targetEntityId), updated);
 		resendTeam(receiver, target);
 
