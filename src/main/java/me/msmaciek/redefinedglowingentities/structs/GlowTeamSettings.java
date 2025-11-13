@@ -1,15 +1,16 @@
 package me.msmaciek.redefinedglowingentities.structs;
 
 import lombok.Builder;
+import lombok.Getter;
 import lombok.ToString;
 import net.kyori.adventure.text.format.NamedTextColor;
 
-@Builder @ToString
+@Builder(toBuilder = true) @ToString @Getter
 public class GlowTeamSettings {
-	@Builder.Default public boolean glowingEnabled = false;
-	@Builder.Default public NamedTextColor color = NamedTextColor.WHITE;
-	@Builder.Default public GlowTeamNametagVisibility nametagVisibility = GlowTeamNametagVisibility.ALWAYS;
-	@Builder.Default public GlowTeamCollisionRule collisionRule = GlowTeamCollisionRule.ALWAYS;
+	@Builder.Default private final boolean glowingEnabled = false;
+	@Builder.Default private final NamedTextColor color = NamedTextColor.WHITE;
+	@Builder.Default private final GlowTeamNametagVisibility nametagVisibility = GlowTeamNametagVisibility.ALWAYS;
+	@Builder.Default private final GlowTeamCollisionRule collisionRule = GlowTeamCollisionRule.ALWAYS;
 
 	public boolean isDefault() {
 		return !glowingEnabled

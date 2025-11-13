@@ -24,6 +24,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static org.bukkit.Bukkit.getServer;
 
@@ -31,10 +32,10 @@ import static org.bukkit.Bukkit.getServer;
 public class RedefinedGlowingEntitiesAPI {
 	// Player UUID -> EntityID of entity that the player sees as glowing
 	// UUID, ArrayList<Integer>
-	private	final QReversibleHashMap<UUID, Integer> glowingEntities = new QReversibleHashMap<>();
+	private final QReversibleHashMap<UUID, Integer> glowingEntities = new QReversibleHashMap<>();
 
 	// team name -> team settings
-	private final HashMap<String, GlowTeamSettings> entitiesData = new HashMap<>();
+	private final ConcurrentHashMap<String, GlowTeamSettings> entitiesData = new ConcurrentHashMap<>();
 
 	private final JavaPlugin plugin;
 
@@ -77,7 +78,8 @@ public class RedefinedGlowingEntitiesAPI {
 	}
 
 	public void resendTeam(Player receiver, Entity target) {
-		GlowTeamSettings teamSettings = getEntityData(receiver.getUniqueId(), target.getEntityId());
+		GlowTeamSettings teamSettings = Optional.ofNullable(getEntityData(receiver.getUniqueId(), target.getEntityId()))
+			.orElse(GlowTeamSettings.builder().build());
 
 		String entityTeamId = target.getUniqueId().toString();
 		if(target instanceof Player)
@@ -86,7 +88,7 @@ public class RedefinedGlowingEntitiesAPI {
 		var teamRemovePacket = new WrapperPlayServerTeams(
 			Utils.getTeamName(receiver, target.getEntityId()),
 			WrapperPlayServerTeams.TeamMode.REMOVE,
-			Optional.empty()
+			(WrapperPlayServerTeams.ScoreBoardTeamInfo) null
 		);
 
 		PacketEvents.getAPI().getPlayerManager().sendPacket(receiver, teamRemovePacket);
@@ -98,9 +100,9 @@ public class RedefinedGlowingEntitiesAPI {
 				Component.empty(),
 				Component.empty(),
 				Component.empty(),
-				WrapperPlayServerTeams.NameTagVisibility.fromID(teamSettings.nametagVisibility.name()),
-				WrapperPlayServerTeams.CollisionRule.fromID(teamSettings.collisionRule.name()),
-				teamSettings.color,
+				WrapperPlayServerTeams.NameTagVisibility.fromID(teamSettings.getNametagVisibility().name()),
+				WrapperPlayServerTeams.CollisionRule.fromID(teamSettings.getCollisionRule().name()),
+				teamSettings.getColor(),
 				WrapperPlayServerTeams.OptionData.NONE
 			),
 			List.of(entityTeamId)
@@ -112,27 +114,48 @@ public class RedefinedGlowingEntitiesAPI {
 	//#region properties
 	public void setGlowing(Player receiver, Entity target, NamedTextColor color) {
 		setTeamSettingsIfAbsent(receiver, target);
-		getEntityData(receiver.getUniqueId(), target.getEntityId()).color = color;
-		getEntityData(receiver.getUniqueId(), target.getEntityId()).glowingEnabled = true;
+
+		UUID receiverUUID = receiver.getUniqueId();
+		int targetEntityId = target.getEntityId();
+
+		GlowTeamSettings data = Optional.ofNullable(getEntityData(receiverUUID, targetEntityId)).orElse(GlowTeamSettings.builder().build());
+		GlowTeamSettings updated = data.toBuilder()
+			.color(color)
+			.glowingEnabled(true)
+			.build();
+
+		entitiesData.put(Utils.getTeamName(receiverUUID, targetEntityId), updated);
 		resendTeam(receiver, target);
 		resendEntityMetadata(receiver, target);
 	}
 
 	public void unsetGlowing(Player receiver, Entity target) {
-		if(getEntityData(receiver.getUniqueId(), target.getEntityId()) == null)
+		UUID receiverUUID = receiver.getUniqueId();
+		int targetEntityId = target.getEntityId();
+
+		GlowTeamSettings data = getEntityData(receiverUUID, targetEntityId);
+		if(data == null)
 			return;
 
-		getEntityData(receiver.getUniqueId(), target.getEntityId()).color = NamedTextColor.WHITE;
-		getEntityData(receiver.getUniqueId(), target.getEntityId()).glowingEnabled = false;
+		GlowTeamSettings updated = data.toBuilder()
+			.color(NamedTextColor.WHITE)
+			.glowingEnabled(false)
+			.build();
+
+		entitiesData.put(Utils.getTeamName(receiverUUID, targetEntityId), updated);
 		resendTeam(receiver, target);
 
 		if(!removeIfDefault(receiver, target))
 			resendEntityMetadata(receiver, target);
 	}
 
-	public void setNametagVisiblity(Player receiver, Entity target, GlowTeamNametagVisibility visibility) {
+	public void setNametagVisibility(Player receiver, Entity target, GlowTeamNametagVisibility visibility) {
 		setTeamSettingsIfAbsent(receiver, target);
-		getEntityData(receiver.getUniqueId(), target.getEntityId()).nametagVisibility = visibility;
+		UUID receiverUUID = receiver.getUniqueId();
+		int targetEntityId = target.getEntityId();
+		GlowTeamSettings data = Optional.ofNullable(getEntityData(receiverUUID, targetEntityId)).orElse(GlowTeamSettings.builder().build());
+		GlowTeamSettings updated = data.toBuilder().nametagVisibility(visibility).build();
+		entitiesData.put(Utils.getTeamName(receiverUUID, targetEntityId), updated);
 		resendTeam(receiver, target);
 
 		if(!removeIfDefault(receiver, target))
@@ -141,7 +164,11 @@ public class RedefinedGlowingEntitiesAPI {
 
 	public void setCollisionRule(Player receiver, Entity target, GlowTeamCollisionRule collisionRule) {
 		setTeamSettingsIfAbsent(receiver, target);
-		getEntityData(receiver.getUniqueId(), target.getEntityId()).collisionRule = collisionRule;
+		UUID receiverUUID = receiver.getUniqueId();
+		int targetEntityId = target.getEntityId();
+		GlowTeamSettings data = Optional.ofNullable(getEntityData(receiverUUID, targetEntityId)).orElse(GlowTeamSettings.builder().build());
+		GlowTeamSettings updated = data.toBuilder().collisionRule(collisionRule).build();
+		entitiesData.put(Utils.getTeamName(receiverUUID, targetEntityId), updated);
 		resendTeam(receiver, target);
 
 		if(!removeIfDefault(receiver, target))
@@ -150,7 +177,11 @@ public class RedefinedGlowingEntitiesAPI {
 
 	public void setGlowingColor(Player receiver, Entity target, NamedTextColor color) {
 		setTeamSettingsIfAbsent(receiver, target);
-		getEntityData(receiver.getUniqueId(), target.getEntityId()).color = color;
+		UUID receiverUUID = receiver.getUniqueId();
+		int targetEntityId = target.getEntityId();
+		GlowTeamSettings data = Optional.ofNullable(getEntityData(receiverUUID, targetEntityId)).orElse(GlowTeamSettings.builder().build());
+		GlowTeamSettings updated = data.toBuilder().color(color).build();
+		entitiesData.put(Utils.getTeamName(receiverUUID, targetEntityId), updated);
 		resendTeam(receiver, target);
 
 		if(!removeIfDefault(receiver, target))
@@ -164,9 +195,11 @@ public class RedefinedGlowingEntitiesAPI {
 
 		if(glowingEntities.containsKey(receiverUUID)) {
 			while(true) {
-				ArrayList<Integer> ar = glowingEntities.getReadOnly(receiverUUID);
+				ArrayList<Integer> ar = new ArrayList<>();
+				var ro = glowingEntities.getReadOnly(receiverUUID);
+				if (ro != null) ar.addAll(ro);
 
-				if(ar == null || ar.isEmpty())
+				if(ar.isEmpty())
 					break;
 
 				int entityId = ar.get(0);
@@ -187,9 +220,11 @@ public class RedefinedGlowingEntitiesAPI {
 			return;
 
 		while(true) {
-			ArrayList<UUID> ar = glowingEntities.getReversedHashMap().get(entityId);
+			ArrayList<UUID> ar = new ArrayList<>();
+			var ro = glowingEntities.getReversedHashMap().get(entityId);
+			if (ro != null) ar.addAll(ro);
 
-			if (ar == null || ar.isEmpty())
+			if (ar.isEmpty())
 				break;
 
 			UUID receiverUUID = ar.get(0);
@@ -212,7 +247,7 @@ public class RedefinedGlowingEntitiesAPI {
 		if(isTeamSettingsAbsent(receiverUUID, entityId))
 			return false;
 
-		if(!getEntityData(receiverUUID, entityId).isDefault())
+		if(!Objects.requireNonNull(getEntityData(receiverUUID, entityId)).isDefault())
 			return false;
 
 		glowingEntities.getAndRemove(receiverUUID, entityId);

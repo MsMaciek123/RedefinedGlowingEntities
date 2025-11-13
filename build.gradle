@@ -1,10 +1,10 @@
 plugins {
     id 'java'
-    id 'com.gradleup.shadow' version '8.3.3'
+    id 'com.gradleup.shadow' version '8.3.5'
 }
 
 group = 'me.msmaciek'
-version = '1.0.6'
+version = '1.1.0'
 
 repositories {
     mavenCentral()

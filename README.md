@@ -26,7 +26,7 @@ public void onEntityInteractEvent(PlayerInteractAtEntityEvent e) {
 	Player player = e.getPlayer();
 
 	geAPI.setGlowing(player, rightClickedEntity, NamedTextColor.GREEN);
-	geAPI.setNametagVisiblity(player, rightClickedEntity, GlowTeamNametagVisibility.NEVER);
+	geAPI.setNametagVisibility(player, rightClickedEntity, GlowTeamNametagVisibility.NEVER);
 	geAPI.setCollisionRule(player, rightClickedEntity, GlowTeamCollisionRule.NEVER);
 }
 ```

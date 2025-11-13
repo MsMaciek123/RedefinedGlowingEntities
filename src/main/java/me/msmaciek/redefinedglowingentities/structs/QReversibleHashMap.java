@@ -4,73 +4,79 @@ import lombok.Getter;
 import lombok.ToString;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 
 @ToString
 public class QReversibleHashMap<K, V> {
-	public HashMap<K, ArrayList<V>> hashMap = new HashMap<>();
-	@Getter HashMap<V, ArrayList<K>> reversedHashMap = new HashMap<>();
+	public final HashMap<K, ArrayList<V>> hashMap = new HashMap<>();
+	@Getter private final HashMap<V, ArrayList<K>> reversedHashMap = new HashMap<>();
 
-	public void put(K key, ArrayList<V> values) {
-		if(!hashMap.containsKey(key)) {
-			hashMap.put(key, new ArrayList<>());
-		}
-		hashMap.get(key).addAll(values);
-		for(V value : values) {
-			if(!reversedHashMap.containsKey(value)) {
-				reversedHashMap.put(value, new ArrayList<>());
+	public synchronized void put(K key, ArrayList<V> values) {
+		if (values == null || values.isEmpty()) return;
+		hashMap.computeIfAbsent(key, k -> new ArrayList<>());
+		for (V value : values) {
+			if (value == null) continue;
+			if (!hashMap.get(key).contains(value)) {
+				hashMap.get(key).add(value);
+				reversedHashMap.computeIfAbsent(value, v -> new ArrayList<>());
+				if (!reversedHashMap.get(value).contains(key)) {
+					reversedHashMap.get(value).add(key);
+				}
 			}
-			reversedHashMap.get(value).add(key);
 		}
 	}
 
-	public boolean containsKey(K key) {
+	public synchronized boolean containsKey(K key) {
 		return hashMap.containsKey(key);
 	}
 
-	public void putIfAbsent(K key, ArrayList<V> value) {
-		if(hashMap.containsKey(key))
-			return;
-
+	public synchronized void putIfAbsent(K key, ArrayList<V> value) {
+		if (hashMap.containsKey(key)) return;
 		put(key, value);
 	}
 
-	public void remove(K key) {
-		for(V value : hashMap.get(key)) {
-			reversedHashMap.get(value).remove(key);
-			if(reversedHashMap.get(value).isEmpty())
-				reversedHashMap.remove(value);
+	public synchronized void remove(K key) {
+		ArrayList<V> list = hashMap.remove(key);
+		if (list == null) return;
+		for (V value : list) {
+			ArrayList<K> keys = reversedHashMap.get(value);
+			if (keys != null) {
+				keys.remove(key);
+				if (keys.isEmpty()) reversedHashMap.remove(value);
+			}
 		}
-		hashMap.remove(key);
 	}
 
-	public ArrayList<V> getReadOnly(K key) {
-		return hashMap.get(key);
+	public synchronized List<V> getReadOnly(K key) {
+		ArrayList<V> list = hashMap.get(key);
+		if (list == null) return null;
+		return List.copyOf(list);
 	}
 
-	public void getAndAdd(K key, V value) {
-		if(!hashMap.containsKey(key)) {
-			hashMap.put(key, new ArrayList<>());
-		}
-		if(!reversedHashMap.containsKey(value)) {
-			reversedHashMap.put(value, new ArrayList<>());
-		}
-		hashMap.get(key).add(value);
-		reversedHashMap.get(value).add(key);
-
-		if(hashMap.get(key).isEmpty())
-			hashMap.remove(key);
-		if(reversedHashMap.get(value).isEmpty())
-			reversedHashMap.remove(value);
+	public synchronized void getAndAdd(K key, V value) {
+		if (value == null) return;
+		hashMap.computeIfAbsent(key, k -> new ArrayList<>());
+		reversedHashMap.computeIfAbsent(value, v -> new ArrayList<>());
+		ArrayList<V> values = hashMap.get(key);
+		if (!values.contains(value)) values.add(value);
+		ArrayList<K> keys = reversedHashMap.get(value);
+		if (!keys.contains(key)) keys.add(key);
+		if (values.isEmpty()) hashMap.remove(key);
+		if (keys.isEmpty()) reversedHashMap.remove(value);
 	}
 
-	public void getAndRemove(K key, V value) {
-		hashMap.get(key).remove(value);
-		reversedHashMap.get(value).remove(key);
-
-		if(hashMap.get(key).isEmpty())
-			hashMap.remove(key);
-		if(reversedHashMap.get(value).isEmpty())
-			reversedHashMap.remove(value);
+	public synchronized void getAndRemove(K key, V value) {
+		ArrayList<V> values = hashMap.get(key);
+		if (values != null) {
+			values.remove(value);
+			if (values.isEmpty()) hashMap.remove(key);
+		}
+		ArrayList<K> keys = reversedHashMap.get(value);
+		if (keys != null) {
+			keys.remove(key);
+			if (keys.isEmpty()) reversedHashMap.remove(value);
+		}
 	}
 }
