@@ -353,4 +353,13 @@ public class RedefinedGlowingEntitiesAPI {
 	public boolean isPlayerDataSet(Player receiver, Player target) {
 		return isEntityDataSet(receiver.getUniqueId(), target.getEntityId());
 	}
+
+	public boolean isGlowingDataSet(UUID receiverUUID, int targetId) {
+		GlowTeamSettings data = getEntityData(receiverUUID, targetId);
+		return data != null && data.isGlowingEnabled();
+	}
+
+	public boolean isGlowingDataSet(Player receiver, Entity target) {
+		return isGlowingDataSet(receiver.getUniqueId(), target.getEntityId());
+	}
 }
